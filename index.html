@@ -269,7 +269,7 @@
                 <label><i class="fas fa-key"></i> MASUKKAN KODE</label>
                 <div class="input-box">
                     <i class="fas fa-code"></i>
-                    <input type="text" id="kode" placeholder="contoh: abc123" autocomplete="off">
+                    <input type="text" id="kode" placeholder="Contoh: 189201DKX" autocomplete="off">
                 </div>
             </div>
             <div class="buttons">
@@ -288,7 +288,7 @@
         </div>
     </div>
     <footer>
-        testing webku · cdn2.videy.co/${kode}.mp4
+        cdn2.videy.co / [kode] .mp4
     </footer>
 </div>
 
@@ -385,12 +385,12 @@
     playBtn.addEventListener('click', () => {
         let raw = kodeInput.value;
         if (!raw) {
-            toast('Masukkan kode dulu boss', 'warning');
+            toast('Masukkan kode dulu', 'warning');
             return;
         }
         let kode = bersihkanKode(raw);
         if (!kode) {
-            toast('Kode invalid! contoh: 9f2a3b1c', 'error');
+            toast('Kode invalid! contoh: 189201DKX', 'error');
             return;
         }
         putarVideo(kode);
