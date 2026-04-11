@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Testing Webku · Media Player</title>
-    <!-- Google Fonts & Font Awesome -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
@@ -21,14 +20,12 @@
             line-height: 1.5;
         }
 
-        /* App container */
         .app {
             max-width: 1600px;
             margin: 0 auto;
             padding: 24px 32px;
         }
 
-        /* premium-style header */
         .premium-header {
             display: flex;
             align-items: center;
@@ -73,14 +70,12 @@
             color: #ff4d4d;
         }
 
-        /* main player card */
         .player-card {
             background: #1a1a1a;
             border-radius: 24px;
             overflow: hidden;
             box-shadow: 0 20px 35px -12px rgba(0,0,0,0.6);
             border: 1px solid #2c2c2c;
-            transition: all 0.2s ease;
             margin-bottom: 32px;
         }
 
@@ -89,13 +84,6 @@
             position: relative;
             width: 100%;
             aspect-ratio: 16 / 9;
-        }
-
-        #videoFrame {
-            width: 100%;
-            height: 100%;
-            border: none;
-            display: block;
         }
 
         .empty-state {
@@ -117,7 +105,6 @@
             color: #3f3f3f;
         }
 
-        /* kontrol bar */
         .control-bar {
             padding: 20px 28px;
             background: #141414;
@@ -229,7 +216,6 @@
             border-color: #ff4d4d;
         }
 
-        /* info panel */
         .info-panel {
             background: #121212;
             border-radius: 20px;
@@ -278,10 +264,6 @@
             margin-top: 8px;
         }
 
-        i.fa, i.far, i.fas {
-            pointer-events: none;
-        }
-
         footer {
             margin-top: 40px;
             text-align: center;
@@ -307,12 +289,40 @@
             }
         }
 
-        /* animasi subtle */
-        .player-card {
-            transition: transform 0.1s ease;
-        }
         button:active {
             transform: scale(0.96);
+        }
+
+        .floating-toast {
+            animation: fadeUp 0.2s ease;
+        }
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #444;
+            border-radius: 8px;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: black;
         }
     </style>
 </head>
@@ -331,19 +341,18 @@
 
     <div class="player-card">
         <div class="video-container" id="videoContainer">
-            <!-- iframe atau empty state akan diisi javascript -->
             <div id="videoFrameWrapper" style="width:100%; height:100%;"></div>
         </div>
 
         <div class="control-bar">
             <div class="code-input-group">
-                <label><i class="fas fa-link"></i> masukkan kode / ID dari cdn2.videy.co</label>
+                <label><i class="fas fa-link"></i> masukkan kode dari cdn2.videy.co</label>
                 <div class="input-wrapper">
                     <i class="fas fa-code"></i>
-                    <input type="text" id="videoCode" placeholder="contoh: 9f2a3b1c atau path lengkap videy ..." autocomplete="off">
+                    <input type="text" id="videoCode" placeholder="contoh: abc123.mp4 atau https://cdn2.videy.co/xyz789.mp4" autocomplete="off">
                 </div>
                 <div class="helper-text">
-                    <i class="fas fa-info-circle"></i> Cukup masukkan kode unik dari URL: cdn2.videy.co/kode
+                    <i class="fas fa-info-circle"></i> Format: <strong>kode.mp4</strong> atau URL lengkap cdn2.videy.co/kode.mp4
                 </div>
             </div>
             <div class="action-buttons">
@@ -363,16 +372,15 @@
             </div>
         </div>
         <div class="helper-text" style="margin-top:0;">
-            <i class="fas fa-robot"></i> Bot / player akan memutar dari domain videy.co — pastikan kode valid.
+            <i class="fas fa-robot"></i> Bot / player akan memutar video dari cdn2.videy.co dengan format .mp4
         </div>
     </div>
     <footer>
-        testing webku · player premium &nbsp;|&nbsp; <i class="fas fa-video"></i> embed videy player
+        testing webku · player premium &nbsp;|&nbsp; <i class="fas fa-video"></i> videy mp4 player
     </footer>
 </div>
 
 <script>
-    // elemen DOM
     const videoCodeInput = document.getElementById('videoCode');
     const playBtn = document.getElementById('playBtn');
     const clearBtn = document.getElementById('clearBtn');
@@ -380,70 +388,69 @@
     const statusBadge = document.getElementById('statusBadge');
     const activeCodeDisplay = document.getElementById('activeCodeDisplay');
 
-    // state
-    let currentEmbedUrl = null;
+    let currentVideoUrl = null;
     let currentRawCode = '';
 
-    // base url videy
     const VIDEY_BASE = 'https://cdn2.videy.co';
 
-    // fungsi untuk membersihkan dan mengekstrak kode dari input
+    // extract kode dari input (support .mp4 di akhir)
     function extractCodeFromInput(rawInput) {
         if (!rawInput) return null;
         let trimmed = rawInput.trim();
-        // jika user memasukkan full url yang mengandung cdn2.videy.co/...
+        
+        // Cek apakah full URL dengan cdn2.videy.co
         if (trimmed.includes('cdn2.videy.co/')) {
-            // cari bagian setelah domain
-            const match = trimmed.match(/cdn2\.videy\.co\/([a-zA-Z0-9\-_]+)/);
+            const match = trimmed.match(/cdn2\.videy\.co\/([a-zA-Z0-9\-_]+\.mp4)/i);
             if (match && match[1]) {
                 return match[1];
             }
-            // fallback: ambil bagian akhir setelah slash terakhir
+            // fallback ambil setelah slash terakhir
             const parts = trimmed.split('/');
-            const lastPart = parts[parts.length - 1];
-            if (lastPart && lastPart.length > 0) {
-                // hilangkan parameter query
-                return lastPart.split('?')[0].split('#')[0];
+            let lastPart = parts[parts.length - 1];
+            if (lastPart) {
+                lastPart = lastPart.split('?')[0].split('#')[0];
+                if (lastPart.endsWith('.mp4')) {
+                    return lastPart;
+                }
+                return lastPart + '.mp4';
             }
             return null;
         } else {
-            // anggap user langsung memasukkan kode (hanya alfanumerik + dash/underscore)
-            const cleanCode = trimmed.split('?')[0].split('#')[0];
-            if (/^[a-zA-Z0-9\-_]+$/.test(cleanCode) && cleanCode.length > 0) {
+            // user langsung masukkan kode (bisa dengan atau tanpa .mp4)
+            let cleanCode = trimmed.split('?')[0].split('#')[0];
+            if (!cleanCode.endsWith('.mp4')) {
+                cleanCode = cleanCode + '.mp4';
+            }
+            // validasi karakter dasar
+            const baseCode = cleanCode.replace('.mp4', '');
+            if (/^[a-zA-Z0-9\-_]+$/.test(baseCode) && baseCode.length > 0) {
                 return cleanCode;
             }
             return null;
         }
     }
 
-    // membuat URL embed yang valid untuk videy (format embed umum)
-    // biasanya videy mendukung embed dengan ?embed=1 atau langsung iframe src, tetapi 
-    // kita gunakan pendekatan universal: https://cdn2.videy.co/{kode}?embed=1&autoplay=1 untuk pengalaman premium
-    // serta tambahan parameter agar responsif.
-    function buildEmbedUrl(code) {
-        if (!code) return null;
-        // URL final dengan parameter autoplay=1 untuk memulai otomatis (premium feel) dan embed mode
-        // agar tidak ada header tambahan. pastikan tidak ada redirect aneh.
-        return `${VIDEY_BASE}/${code}?embed=1&autoplay=1&loop=0&controls=1`;
+    // build full video URL
+    function buildVideoUrl(codeWithExt) {
+        if (!codeWithExt) return null;
+        return `${VIDEY_BASE}/${codeWithExt}`;
     }
 
-    // render video ke dalam container
-    function renderVideo(url, rawCode) {
-        // kosongkan wrapper
+    // render video menggunakan <video> tag agar lebih fleksibel (bisa kontrol native)
+    function renderVideo(videoUrl, rawCode) {
         videoFrameWrapper.innerHTML = '';
-        if (!url) {
-            // tampilkan empty state elegan
+        
+        if (!videoUrl) {
             const emptyDiv = document.createElement('div');
             emptyDiv.className = 'empty-state';
             emptyDiv.innerHTML = `
                 <i class="fas fa-film"></i>
                 <span>Tidak ada video diputar</span>
-                <small style="font-size:12px">Masukkan kode videy dan klik Putar video</small>
+                <small style="font-size:12px">Masukkan kode videy (contoh: abc123.mp4) dan klik Putar</small>
             `;
             videoFrameWrapper.appendChild(emptyDiv);
-            currentEmbedUrl = null;
+            currentVideoUrl = null;
             currentRawCode = '';
-            // update status badge & display
             statusBadge.innerHTML = '<i class="fas fa-circle" style="font-size:0.5rem;"></i> idle';
             statusBadge.style.background = "#1e1e2a";
             statusBadge.style.color = "#a0a0ff";
@@ -451,84 +458,90 @@
             return;
         }
 
-        // buat iframe dengan style modern
-        const iframe = document.createElement('iframe');
-        iframe.id = 'videoFrame';
-        iframe.src = url;
-        iframe.title = 'Videy player - testing webku';
-        iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
-        iframe.allowFullscreen = true;
-        iframe.setAttribute('loading', 'eager');
-        iframe.style.border = 'none';
-        iframe.style.width = '100%';
-        iframe.style.height = '100%';
-        iframe.style.backgroundColor = '#000';
+        // buat elemen video dengan kontrol native + autoplay
+        const videoElem = document.createElement('video');
+        videoElem.src = videoUrl;
+        videoElem.controls = true;
+        videoElem.autoplay = true;
+        videoElem.style.width = '100%';
+        videoElem.style.height = '100%';
+        videoElem.style.objectFit = 'contain';
+        videoElem.style.backgroundColor = '#000';
+        videoElem.setAttribute('playsinline', '');
         
-        // tambahkan event load untuk update status (optional)
-        iframe.onload = () => {
-            statusBadge.innerHTML = '<i class="fas fa-play-circle"></i> video dimuat · siap tayang';
+        // event listeners untuk status
+        videoElem.addEventListener('canplay', () => {
+            statusBadge.innerHTML = '<i class="fas fa-play-circle"></i> video siap · diputar';
             statusBadge.style.background = "#1e2a1e";
             statusBadge.style.color = "#baffba";
-        };
-        iframe.onerror = () => {
-            // fallback jika iframe gagal (tampilkan pesan tapi tetap ada)
-            statusBadge.innerHTML = '<i class="fas fa-exclamation-triangle"></i> gagal memuat video';
+        });
+        
+        videoElem.addEventListener('error', (e) => {
+            console.error('Video error:', e);
+            let errorMsg = 'Gagal memuat video. Cek kode atau koneksi.';
+            statusBadge.innerHTML = '<i class="fas fa-exclamation-triangle"></i> gagal memuat';
             statusBadge.style.background = "#2a1e1e";
             statusBadge.style.color = "#ffaaaa";
-        };
+            showFloatingMessage(errorMsg, 'error');
+        });
         
-        videoFrameWrapper.appendChild(iframe);
-        currentEmbedUrl = url;
+        videoElem.addEventListener('play', () => {
+            statusBadge.innerHTML = '<i class="fas fa-play"></i> sedang diputar';
+        });
+        
+        videoElem.addEventListener('pause', () => {
+            statusBadge.innerHTML = '<i class="fas fa-pause"></i> dijeda';
+        });
+        
+        videoFrameWrapper.appendChild(videoElem);
+        currentVideoUrl = videoUrl;
         currentRawCode = rawCode;
         
-        // update panel info dengan kode yang sedang diputar
-        let displayText = rawCode.length > 28 ? rawCode.substring(0, 25) + '...' : rawCode;
-        activeCodeDisplay.innerHTML = `<i class="fas fa-code-branch"></i> kode: ${displayText}  <span style="opacity:0.6;">| embed aktif</span>`;
-        statusBadge.innerHTML = '<i class="fas fa-check-circle"></i> video diputar';
-        statusBadge.style.background = "#1e2a1e";
-        statusBadge.style.color = "#b8ffb8";
+        let displayText = rawCode.length > 32 ? rawCode.substring(0, 28) + '...' : rawCode;
+        activeCodeDisplay.innerHTML = `<i class="fas fa-video"></i> video: ${displayText}`;
+        statusBadge.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> memuat...';
+        statusBadge.style.background = "#2a2a1e";
+        
+        // coba mainkan otomatis (bisa kena kebijakan browser, tapi autoplay attribute sudah ada)
+        videoElem.play().catch(e => {
+            console.log('Autoplay dicegah browser:', e);
+            showFloatingMessage('Klik play untuk memulai video (autoplay diblokir browser)', 'info');
+            statusBadge.innerHTML = '<i class="fas fa-play-circle"></i> siap (klik play)';
+        });
     }
-
-    // fungsi utama untuk memutar video berdasarkan input
+    
+    // fungsi utama play
     function playVideoFromInput() {
         let rawInput = videoCodeInput.value;
         if (!rawInput || rawInput.trim() === '') {
-            // beri notifikasi halus (tidak mengganggu, mirip toast biasa)
             showFloatingMessage('Masukkan kode video terlebih dahulu', 'warning');
             return;
         }
         
         const extractedCode = extractCodeFromInput(rawInput);
         if (!extractedCode) {
-            showFloatingMessage('Kode tidak valid! Masukkan kode dari cdn2.videy.co/kode (contoh: 9f2a3b atau abc123)', 'error');
-            // reset tampilan dengan tetap menjaga empty state
+            showFloatingMessage('Format tidak valid! Gunakan seperti: abc123.mp4', 'error');
             renderVideo(null, '');
-            videoCodeInput.value = ''; // optional bersihkan agar user sadar
             return;
         }
         
-        // build embed URL
-        const embedUrl = buildEmbedUrl(extractedCode);
-        if (!embedUrl) {
-            showFloatingMessage('Gagal membuat URL pemutar', 'error');
+        const videoUrl = buildVideoUrl(extractedCode);
+        if (!videoUrl) {
+            showFloatingMessage('Gagal membuat URL video', 'error');
             return;
         }
         
-        // render video baru
-        renderVideo(embedUrl, extractedCode);
-        // simpan kode yang terakhir di input untuk konsistensi
-        videoCodeInput.value = extractedCode;  // tampilkan kode bersih di input
-        showFloatingMessage(`Memutar video dengan kode: ${extractedCode}`, 'success');
+        renderVideo(videoUrl, extractedCode);
+        videoCodeInput.value = extractedCode;
+        showFloatingMessage(`Memutar: ${extractedCode}`, 'success');
     }
     
-    // fungsi clear video
     function clearVideo() {
         renderVideo(null, '');
         videoCodeInput.value = '';
-        currentEmbedUrl = null;
+        currentVideoUrl = null;
         currentRawCode = '';
         showFloatingMessage('Video dihentikan & pemutar dibersihkan', 'info');
-        // tambahkan fokus ke input
         videoCodeInput.focus();
         statusBadge.innerHTML = '<i class="fas fa-circle" style="font-size:0.5rem;"></i> standby';
         statusBadge.style.background = "#1e1e2a";
@@ -536,10 +549,9 @@
         activeCodeDisplay.innerHTML = '<i class="fas fa-tag"></i> tidak ada video aktif';
     }
     
-    // floating message sementara (tanpa library eksternal, mirip notifikasi premium)
+    // floating notifikasi
     let toastTimeout = null;
     function showFloatingMessage(message, type = 'info') {
-        // cek jika sudah ada toast element, hapus
         const existingToast = document.querySelector('.floating-toast');
         if (existingToast) existingToast.remove();
         if (toastTimeout) clearTimeout(toastTimeout);
@@ -580,7 +592,6 @@
         toast.innerHTML = `<i class="${icon}" style="font-size:1rem;"></i> <span>${message}</span>`;
         document.body.appendChild(toast);
         
-        // animasi masuk
         toast.style.opacity = '0';
         toast.style.transition = 'opacity 0.2s';
         setTimeout(() => { toast.style.opacity = '1'; }, 10);
@@ -593,7 +604,6 @@
         }, 2800);
     }
     
-    // event listener tombol
     playBtn.addEventListener('click', () => {
         playVideoFromInput();
     });
@@ -602,7 +612,6 @@
         clearVideo();
     });
     
-    // tambahkan event enter pada input field untuk kenyamanan
     videoCodeInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
             e.preventDefault();
@@ -610,60 +619,11 @@
         }
     });
     
-    // Inisialisasi: kosongkan player dengan empty state yang rapi
+    // inisialisasi kosong
     renderVideo(null, '');
     
-    // bonus: contoh jika ingin ada demo kode (opsional, tapi tidak mengganggu)
-    // kita berikan contoh placeholder dinamis agar user mengerti format
-    videoCodeInput.placeholder = "Contoh: a1b2c3 atau https://cdn2.videy.co/xyz123";
-    
-    // menambahkan style tambahan untuk iframe responsif
-    const style = document.createElement('style');
-    style.textContent = `
-        .video-container iframe {
-            transition: opacity 0.2s;
-        }
-        .floating-toast {
-            pointer-events: none;
-            animation: fadeUp 0.2s ease;
-        }
-        @keyframes fadeUp {
-            from {
-                opacity: 0;
-                transform: translateX(-50%) translateY(12px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(-50%) translateY(0);
-            }
-        }
-        .empty-state i {
-            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
-        }
-        input::placeholder {
-            color: #5a5a5a;
-            font-weight: 400;
-        }
-        .btn {
-            cursor: pointer;
-        }
-        .status-badge i {
-            margin-right: 4px;
-        }
-        /* scrollbar premium */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #1a1a1a;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #444;
-            border-radius: 8px;
-        }
-    `;
-    document.head.appendChild(style);
+    // tambahkan contoh hint di placeholder
+    videoCodeInput.placeholder = "Contoh: 9f2a3b1c.mp4 atau https://cdn2.videy.co/video123.mp4";
 </script>
 </body>
 </html>
