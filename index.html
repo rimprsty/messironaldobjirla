@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Testing Webku · Media Player</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <title>Testing Webku</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         * {
@@ -12,21 +12,17 @@
             padding: 0;
             box-sizing: border-box;
         }
-
         body {
             background-color: #0f0f0f;
             font-family: 'Inter', sans-serif;
             color: #f1f1f1;
-            line-height: 1.5;
         }
-
         .app {
-            max-width: 1600px;
+            max-width: 1400px;
             margin: 0 auto;
             padding: 24px 32px;
         }
-
-        .premium-header {
+        .header {
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -36,26 +32,16 @@
             border-bottom: 1px solid #272727;
             padding-bottom: 16px;
         }
-
-        .logo-area h1 {
+        .header h1 {
             font-size: 1.8rem;
             font-weight: 600;
             background: linear-gradient(135deg, #FFFFFF 0%, #aaaaaa 100%);
             background-clip: text;
             -webkit-background-clip: text;
             color: transparent;
-            letter-spacing: -0.3px;
         }
-
-        .logo-area p {
-            font-size: 0.75rem;
-            color: #aaa;
-            margin-top: 4px;
-        }
-
-        .badge-premium {
+        .premium-badge {
             background: rgba(255,255,255,0.05);
-            backdrop-filter: blur(4px);
             padding: 8px 16px;
             border-radius: 40px;
             font-size: 0.8rem;
@@ -65,27 +51,21 @@
             align-items: center;
             gap: 8px;
         }
-
-        .badge-premium i {
+        .premium-badge i {
             color: #ff4d4d;
         }
-
         .player-card {
             background: #1a1a1a;
             border-radius: 24px;
             overflow: hidden;
-            box-shadow: 0 20px 35px -12px rgba(0,0,0,0.6);
             border: 1px solid #2c2c2c;
             margin-bottom: 32px;
         }
-
         .video-container {
-            background: #000000;
-            position: relative;
+            background: #000;
             width: 100%;
             aspect-ratio: 16 / 9;
         }
-
         .empty-state {
             width: 100%;
             height: 100%;
@@ -96,15 +76,11 @@
             background: #0a0a0a;
             color: #aaa;
             gap: 16px;
-            font-size: 0.9rem;
         }
-
         .empty-state i {
             font-size: 64px;
             opacity: 0.5;
-            color: #3f3f3f;
         }
-
         .control-bar {
             padding: 20px 28px;
             background: #141414;
@@ -115,13 +91,11 @@
             justify-content: space-between;
             gap: 18px;
         }
-
-        .code-input-group {
+        .input-area {
             flex: 3;
             min-width: 220px;
         }
-
-        .code-input-group label {
+        .input-area label {
             display: block;
             font-size: 0.75rem;
             font-weight: 500;
@@ -130,23 +104,23 @@
             color: #aaa;
             margin-bottom: 8px;
         }
-
-        .input-wrapper {
+        .input-box {
             display: flex;
             align-items: center;
             background: #0f0f0f;
             border-radius: 48px;
             border: 1px solid #333;
-            transition: all 0.2s;
             padding: 4px 8px 4px 20px;
         }
-
-        .input-wrapper:focus-within {
+        .input-box:focus-within {
             border-color: #ff4d4d;
             box-shadow: 0 0 0 2px rgba(255,77,77,0.2);
         }
-
-        #videoCode {
+        .input-box i {
+            color: #777;
+            margin-right: 8px;
+        }
+        #kode {
             flex: 1;
             background: transparent;
             border: none;
@@ -156,19 +130,10 @@
             font-family: 'Inter', monospace;
             outline: none;
         }
-
-        .input-wrapper i {
-            color: #777;
-            font-size: 1.1rem;
-            margin-right: 8px;
-        }
-
-        .action-buttons {
+        .buttons {
             display: flex;
             gap: 12px;
-            flex-wrap: wrap;
         }
-
         .btn {
             display: inline-flex;
             align-items: center;
@@ -179,63 +144,35 @@
             font-size: 0.85rem;
             border: none;
             cursor: pointer;
-            transition: 0.15s linear;
-            background: #272727;
-            color: #eee;
+            transition: 0.15s;
             font-family: 'Inter', sans-serif;
         }
-
-        .btn-primary {
+        .btn-play {
             background: #ff4d4d;
             color: white;
-            box-shadow: 0 2px 8px rgba(255,77,77,0.3);
         }
-
-        .btn-primary:hover {
+        .btn-play:hover {
             background: #e33e3e;
-            transform: scale(0.97);
         }
-
-        .btn-secondary {
-            background: #2c2c2c;
-            border: 1px solid #3f3f3f;
-        }
-
-        .btn-secondary:hover {
-            background: #3a3a3a;
-        }
-
-        .btn-danger {
+        .btn-clear {
             background: #1e1e1e;
             border: 1px solid #4a2a2a;
             color: #ff8888;
         }
-
-        .btn-danger:hover {
+        .btn-clear:hover {
             background: #2a1a1a;
-            border-color: #ff4d4d;
         }
-
-        .info-panel {
+        .info-bar {
             background: #121212;
             border-radius: 20px;
-            padding: 20px 24px;
+            padding: 16px 24px;
             border: 1px solid #262626;
             display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
-            gap: 16px;
-            margin-top: 8px;
-        }
-
-        .current-status {
-            display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 16px;
             flex-wrap: wrap;
         }
-
-        .status-badge {
+        .status {
             background: #1e2a1e;
             padding: 6px 12px;
             border-radius: 32px;
@@ -246,24 +183,14 @@
             align-items: center;
             gap: 6px;
         }
-
-        .video-url-display {
+        .kode-display {
             font-family: monospace;
             background: #0a0a0a;
-            padding: 8px 14px;
+            padding: 6px 14px;
             border-radius: 40px;
             font-size: 0.75rem;
             color: #b0b0b0;
-            word-break: break-all;
-            max-width: 500px;
         }
-
-        .helper-text {
-            font-size: 0.7rem;
-            color: #6c6c6c;
-            margin-top: 8px;
-        }
-
         footer {
             margin-top: 40px;
             text-align: center;
@@ -272,28 +199,31 @@
             border-top: 1px solid #202020;
             padding-top: 24px;
         }
-
-        @media (max-width: 720px) {
-            .app {
-                padding: 16px;
-            }
-            .control-bar {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            .action-buttons {
-                justify-content: flex-end;
-            }
-            .info-panel {
-                flex-direction: column;
-            }
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: black;
         }
-
         button:active {
             transform: scale(0.96);
         }
-
-        .floating-toast {
+        .toast {
+            position: fixed;
+            bottom: 28px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2c2c2c;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 60px;
+            padding: 10px 24px;
+            font-size: 0.85rem;
+            color: white;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            pointer-events: none;
             animation: fadeUp 0.2s ease;
         }
         @keyframes fadeUp {
@@ -306,324 +236,180 @@
                 transform: translateX(-50%) translateY(0);
             }
         }
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #1a1a1a;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #444;
-            border-radius: 8px;
-        }
-
-        video {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            background: black;
+        @media (max-width: 720px) {
+            .app {
+                padding: 16px;
+            }
+            .control-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .buttons {
+                justify-content: flex-end;
+            }
         }
     </style>
 </head>
 <body>
 <div class="app">
-    <div class="premium-header">
-        <div class="logo-area">
-            <h1>testing webku</h1>
-            <p>stream media · clean experience</p>
-        </div>
-        <div class="badge-premium">
+    <div class="header">
+        <h1>testing webku</h1>
+        <div class="premium-badge">
             <i class="fas fa-crown"></i>
-            <span>premium interface</span>
+            <span>premium</span>
         </div>
     </div>
 
     <div class="player-card">
         <div class="video-container" id="videoContainer">
-            <div id="videoFrameWrapper" style="width:100%; height:100%;"></div>
+            <div id="playerWrapper" style="width:100%; height:100%;"></div>
         </div>
-
         <div class="control-bar">
-            <div class="code-input-group">
-                <label><i class="fas fa-link"></i> masukkan kode dari cdn2.videy.co</label>
-                <div class="input-wrapper">
+            <div class="input-area">
+                <label><i class="fas fa-key"></i> MASUKKAN KODE</label>
+                <div class="input-box">
                     <i class="fas fa-code"></i>
-                    <input type="text" id="videoCode" placeholder="contoh: abc123.mp4 atau https://cdn2.videy.co/xyz789.mp4" autocomplete="off">
-                </div>
-                <div class="helper-text">
-                    <i class="fas fa-info-circle"></i> Format: <strong>kode.mp4</strong> atau URL lengkap cdn2.videy.co/kode.mp4
+                    <input type="text" id="kode" placeholder="contoh: abc123" autocomplete="off">
                 </div>
             </div>
-            <div class="action-buttons">
-                <button class="btn btn-primary" id="playBtn"><i class="fas fa-play"></i> Putar video</button>
-                <button class="btn btn-danger" id="clearBtn"><i class="fas fa-trash-alt"></i> Clear video</button>
+            <div class="buttons">
+                <button class="btn btn-play" id="playBtn"><i class="fas fa-play"></i> Putar</button>
+                <button class="btn btn-clear" id="clearBtn"><i class="fas fa-trash-alt"></i> Clear</button>
             </div>
         </div>
     </div>
 
-    <div class="info-panel">
-        <div class="current-status">
-            <div class="status-badge" id="statusBadge">
-                <i class="fas fa-circle" style="font-size: 0.5rem;"></i> standby
-            </div>
-            <div id="activeCodeDisplay" class="video-url-display">
-                <i class="fas fa-tag"></i> tidak ada video aktif
-            </div>
+    <div class="info-bar">
+        <div class="status" id="statusBadge">
+            <i class="fas fa-circle" style="font-size:0.5rem;"></i> standby
         </div>
-        <div class="helper-text" style="margin-top:0;">
-            <i class="fas fa-robot"></i> Bot / player akan memutar video dari cdn2.videy.co dengan format .mp4
+        <div class="kode-display" id="kodeDisplay">
+            <i class="fas fa-tag"></i> belum ada kode
         </div>
     </div>
     <footer>
-        testing webku · player premium &nbsp;|&nbsp; <i class="fas fa-video"></i> videy mp4 player
+        testing webku · cdn2.videy.co/${kode}.mp4
     </footer>
 </div>
 
 <script>
-    const videoCodeInput = document.getElementById('videoCode');
+    const kodeInput = document.getElementById('kode');
     const playBtn = document.getElementById('playBtn');
     const clearBtn = document.getElementById('clearBtn');
-    const videoFrameWrapper = document.getElementById('videoFrameWrapper');
+    const playerWrapper = document.getElementById('playerWrapper');
     const statusBadge = document.getElementById('statusBadge');
-    const activeCodeDisplay = document.getElementById('activeCodeDisplay');
+    const kodeDisplay = document.getElementById('kodeDisplay');
 
-    let currentVideoUrl = null;
-    let currentRawCode = '';
+    let currentKode = '';
 
-    const VIDEY_BASE = 'https://cdn2.videy.co';
-
-    // extract kode dari input (support .mp4 di akhir)
-    function extractCodeFromInput(rawInput) {
-        if (!rawInput) return null;
-        let trimmed = rawInput.trim();
-        
-        // Cek apakah full URL dengan cdn2.videy.co
-        if (trimmed.includes('cdn2.videy.co/')) {
-            const match = trimmed.match(/cdn2\.videy\.co\/([a-zA-Z0-9\-_]+\.mp4)/i);
-            if (match && match[1]) {
-                return match[1];
-            }
-            // fallback ambil setelah slash terakhir
-            const parts = trimmed.split('/');
-            let lastPart = parts[parts.length - 1];
-            if (lastPart) {
-                lastPart = lastPart.split('?')[0].split('#')[0];
-                if (lastPart.endsWith('.mp4')) {
-                    return lastPart;
-                }
-                return lastPart + '.mp4';
-            }
-            return null;
-        } else {
-            // user langsung masukkan kode (bisa dengan atau tanpa .mp4)
-            let cleanCode = trimmed.split('?')[0].split('#')[0];
-            if (!cleanCode.endsWith('.mp4')) {
-                cleanCode = cleanCode + '.mp4';
-            }
-            // validasi karakter dasar
-            const baseCode = cleanCode.replace('.mp4', '');
-            if (/^[a-zA-Z0-9\-_]+$/.test(baseCode) && baseCode.length > 0) {
-                return cleanCode;
-            }
-            return null;
+    function bersihkanKode(raw) {
+        if (!raw) return null;
+        let bersih = raw.trim().split('?')[0].split('#')[0];
+        if (bersih.includes('cdn2.videy.co/')) {
+            let match = bersih.match(/cdn2\.videy\.co\/([a-zA-Z0-9\-_]+)/);
+            if (match) return match[1];
         }
+        if (bersih.endsWith('.mp4')) bersih = bersih.slice(0, -4);
+        if (/^[a-zA-Z0-9\-_]+$/.test(bersih)) return bersih;
+        return null;
     }
 
-    // build full video URL
-    function buildVideoUrl(codeWithExt) {
-        if (!codeWithExt) return null;
-        return `${VIDEY_BASE}/${codeWithExt}`;
-    }
-
-    // render video menggunakan <video> tag agar lebih fleksibel (bisa kontrol native)
-    function renderVideo(videoUrl, rawCode) {
-        videoFrameWrapper.innerHTML = '';
-        
-        if (!videoUrl) {
-            const emptyDiv = document.createElement('div');
-            emptyDiv.className = 'empty-state';
-            emptyDiv.innerHTML = `
-                <i class="fas fa-film"></i>
-                <span>Tidak ada video diputar</span>
-                <small style="font-size:12px">Masukkan kode videy (contoh: abc123.mp4) dan klik Putar</small>
-            `;
-            videoFrameWrapper.appendChild(emptyDiv);
-            currentVideoUrl = null;
-            currentRawCode = '';
+    function putarVideo(kode) {
+        playerWrapper.innerHTML = '';
+        if (!kode) {
+            let empty = document.createElement('div');
+            empty.className = 'empty-state';
+            empty.innerHTML = '<i class="fas fa-film"></i><span>Tidak ada video</span><small>Masukkan kode dan klik Putar</small>';
+            playerWrapper.appendChild(empty);
+            currentKode = '';
             statusBadge.innerHTML = '<i class="fas fa-circle" style="font-size:0.5rem;"></i> idle';
             statusBadge.style.background = "#1e1e2a";
             statusBadge.style.color = "#a0a0ff";
-            activeCodeDisplay.innerHTML = '<i class="fas fa-tag"></i> tidak ada video aktif';
+            kodeDisplay.innerHTML = '<i class="fas fa-tag"></i> belum ada kode';
             return;
         }
-
-        // buat elemen video dengan kontrol native + autoplay
-        const videoElem = document.createElement('video');
-        videoElem.src = videoUrl;
-        videoElem.controls = true;
-        videoElem.autoplay = true;
-        videoElem.style.width = '100%';
-        videoElem.style.height = '100%';
-        videoElem.style.objectFit = 'contain';
-        videoElem.style.backgroundColor = '#000';
-        videoElem.setAttribute('playsinline', '');
         
-        // event listeners untuk status
-        videoElem.addEventListener('canplay', () => {
-            statusBadge.innerHTML = '<i class="fas fa-play-circle"></i> video siap · diputar';
+        let url = `https://cdn2.videy.co/${kode}.mp4`;
+        let video = document.createElement('video');
+        video.src = url;
+        video.controls = true;
+        video.autoplay = true;
+        video.style.width = '100%';
+        video.style.height = '100%';
+        video.style.objectFit = 'contain';
+        video.style.backgroundColor = '#000';
+        
+        video.addEventListener('canplay', () => {
+            statusBadge.innerHTML = '<i class="fas fa-check-circle"></i> video siap';
             statusBadge.style.background = "#1e2a1e";
             statusBadge.style.color = "#baffba";
         });
-        
-        videoElem.addEventListener('error', (e) => {
-            console.error('Video error:', e);
-            let errorMsg = 'Gagal memuat video. Cek kode atau koneksi.';
-            statusBadge.innerHTML = '<i class="fas fa-exclamation-triangle"></i> gagal memuat';
+        video.addEventListener('error', () => {
+            statusBadge.innerHTML = '<i class="fas fa-exclamation-triangle"></i> gagal muat';
             statusBadge.style.background = "#2a1e1e";
             statusBadge.style.color = "#ffaaaa";
-            showFloatingMessage(errorMsg, 'error');
+            toast('Kode tidak valid atau video tidak ditemukan', 'error');
+        });
+        video.addEventListener('play', () => {
+            statusBadge.innerHTML = '<i class="fas fa-play"></i> diputar';
         });
         
-        videoElem.addEventListener('play', () => {
-            statusBadge.innerHTML = '<i class="fas fa-play"></i> sedang diputar';
-        });
-        
-        videoElem.addEventListener('pause', () => {
-            statusBadge.innerHTML = '<i class="fas fa-pause"></i> dijeda';
-        });
-        
-        videoFrameWrapper.appendChild(videoElem);
-        currentVideoUrl = videoUrl;
-        currentRawCode = rawCode;
-        
-        let displayText = rawCode.length > 32 ? rawCode.substring(0, 28) + '...' : rawCode;
-        activeCodeDisplay.innerHTML = `<i class="fas fa-video"></i> video: ${displayText}`;
-        statusBadge.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> memuat...';
+        playerWrapper.appendChild(video);
+        currentKode = kode;
+        kodeDisplay.innerHTML = `<i class="fas fa-code"></i> ${kode}.mp4`;
+        statusBadge.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> loading...';
         statusBadge.style.background = "#2a2a1e";
         
-        // coba mainkan otomatis (bisa kena kebijakan browser, tapi autoplay attribute sudah ada)
-        videoElem.play().catch(e => {
-            console.log('Autoplay dicegah browser:', e);
-            showFloatingMessage('Klik play untuk memulai video (autoplay diblokir browser)', 'info');
-            statusBadge.innerHTML = '<i class="fas fa-play-circle"></i> siap (klik play)';
+        video.play().catch(() => {
+            toast('Klik play untuk memulai', 'info');
         });
     }
-    
-    // fungsi utama play
-    function playVideoFromInput() {
-        let rawInput = videoCodeInput.value;
-        if (!rawInput || rawInput.trim() === '') {
-            showFloatingMessage('Masukkan kode video terlebih dahulu', 'warning');
-            return;
-        }
-        
-        const extractedCode = extractCodeFromInput(rawInput);
-        if (!extractedCode) {
-            showFloatingMessage('Format tidak valid! Gunakan seperti: abc123.mp4', 'error');
-            renderVideo(null, '');
-            return;
-        }
-        
-        const videoUrl = buildVideoUrl(extractedCode);
-        if (!videoUrl) {
-            showFloatingMessage('Gagal membuat URL video', 'error');
-            return;
-        }
-        
-        renderVideo(videoUrl, extractedCode);
-        videoCodeInput.value = extractedCode;
-        showFloatingMessage(`Memutar: ${extractedCode}`, 'success');
+
+    function toast(msg, type = 'info') {
+        let existing = document.querySelector('.toast');
+        if (existing) existing.remove();
+        let toastEl = document.createElement('div');
+        toastEl.className = 'toast';
+        let icon = 'fa-info-circle';
+        let bg = '#2c2c2c';
+        if (type === 'error') { icon = 'fa-exclamation-circle'; bg = '#3a1f1f'; }
+        if (type === 'success') { icon = 'fa-check-circle'; bg = '#1f3a1f'; }
+        toastEl.style.background = bg;
+        toastEl.innerHTML = `<i class="fas ${icon}"></i><span>${msg}</span>`;
+        document.body.appendChild(toastEl);
+        setTimeout(() => {
+            if (toastEl) toastEl.remove();
+        }, 2500);
     }
-    
-    function clearVideo() {
-        renderVideo(null, '');
-        videoCodeInput.value = '';
-        currentVideoUrl = null;
-        currentRawCode = '';
-        showFloatingMessage('Video dihentikan & pemutar dibersihkan', 'info');
-        videoCodeInput.focus();
-        statusBadge.innerHTML = '<i class="fas fa-circle" style="font-size:0.5rem;"></i> standby';
-        statusBadge.style.background = "#1e1e2a";
-        statusBadge.style.color = "#a0a0ff";
-        activeCodeDisplay.innerHTML = '<i class="fas fa-tag"></i> tidak ada video aktif';
-    }
-    
-    // floating notifikasi
-    let toastTimeout = null;
-    function showFloatingMessage(message, type = 'info') {
-        const existingToast = document.querySelector('.floating-toast');
-        if (existingToast) existingToast.remove();
-        if (toastTimeout) clearTimeout(toastTimeout);
-        
-        const toast = document.createElement('div');
-        toast.className = 'floating-toast';
-        let bgColor = '#2c2c2c';
-        let icon = 'fas fa-info-circle';
-        if (type === 'success') {
-            bgColor = '#1f3a1f';
-            icon = 'fas fa-check-circle';
-        } else if (type === 'error') {
-            bgColor = '#3a1f1f';
-            icon = 'fas fa-exclamation-circle';
-        } else if (type === 'warning') {
-            bgColor = '#3a2e1f';
-            icon = 'fas fa-exclamation-triangle';
-        }
-        toast.style.position = 'fixed';
-        toast.style.bottom = '28px';
-        toast.style.left = '50%';
-        toast.style.transform = 'translateX(-50%)';
-        toast.style.backgroundColor = bgColor;
-        toast.style.backdropFilter = 'blur(12px)';
-        toast.style.border = '1px solid rgba(255,255,255,0.1)';
-        toast.style.borderRadius = '60px';
-        toast.style.padding = '10px 24px';
-        toast.style.fontSize = '0.85rem';
-        toast.style.fontWeight = '500';
-        toast.style.color = 'white';
-        toast.style.zIndex = '9999';
-        toast.style.display = 'flex';
-        toast.style.alignItems = 'center';
-        toast.style.gap = '12px';
-        toast.style.fontFamily = "'Inter', sans-serif";
-        toast.style.boxShadow = '0 8px 24px rgba(0,0,0,0.4)';
-        toast.style.pointerEvents = 'none';
-        toast.innerHTML = `<i class="${icon}" style="font-size:1rem;"></i> <span>${message}</span>`;
-        document.body.appendChild(toast);
-        
-        toast.style.opacity = '0';
-        toast.style.transition = 'opacity 0.2s';
-        setTimeout(() => { toast.style.opacity = '1'; }, 10);
-        
-        toastTimeout = setTimeout(() => {
-            if (toast) {
-                toast.style.opacity = '0';
-                setTimeout(() => { if (toast && toast.remove) toast.remove(); }, 200);
-            }
-        }, 2800);
-    }
-    
+
     playBtn.addEventListener('click', () => {
-        playVideoFromInput();
-    });
-    
-    clearBtn.addEventListener('click', () => {
-        clearVideo();
-    });
-    
-    videoCodeInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            playVideoFromInput();
+        let raw = kodeInput.value;
+        if (!raw) {
+            toast('Masukkan kode dulu boss', 'warning');
+            return;
         }
+        let kode = bersihkanKode(raw);
+        if (!kode) {
+            toast('Kode invalid! contoh: 9f2a3b1c', 'error');
+            return;
+        }
+        putarVideo(kode);
+        kodeInput.value = kode;
+        toast(`Memutar: ${kode}.mp4`, 'success');
     });
-    
-    // inisialisasi kosong
-    renderVideo(null, '');
-    
-    // tambahkan contoh hint di placeholder
-    videoCodeInput.placeholder = "Contoh: 9f2a3b1c.mp4 atau https://cdn2.videy.co/video123.mp4";
+
+    clearBtn.addEventListener('click', () => {
+        putarVideo(null);
+        kodeInput.value = '';
+        toast('Video dibersihkan', 'info');
+        kodeInput.focus();
+    });
+
+    kodeInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') playBtn.click();
+    });
+
+    putarVideo(null);
 </script>
 </body>
 </html>
