@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Testing Webku</title>
+    <title>Dual CDN Player • Videy + Aceimg</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
@@ -39,6 +39,11 @@
             background-clip: text;
             -webkit-background-clip: text;
             color: transparent;
+            letter-spacing: -0.3px;
+        }
+        .badge-group {
+            display: flex;
+            gap: 12px;
         }
         .premium-badge {
             background: rgba(255,255,255,0.05);
@@ -51,8 +56,16 @@
             align-items: center;
             gap: 8px;
         }
-        .premium-badge i {
-            color: #ff4d4d;
+        .cdn-badge {
+            background: #11151f;
+            border: 1px solid #2a3a5a;
+            padding: 8px 16px;
+            border-radius: 40px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         .player-card {
             background: #1a1a1a;
@@ -60,6 +73,7 @@
             overflow: hidden;
             border: 1px solid #2c2c2c;
             margin-bottom: 32px;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.5);
         }
         .video-container {
             background: #000;
@@ -111,6 +125,7 @@
             border-radius: 48px;
             border: 1px solid #333;
             padding: 4px 8px 4px 20px;
+            transition: all 0.2s;
         }
         .input-box:focus-within {
             border-color: #ff4d4d;
@@ -171,6 +186,7 @@
             align-items: center;
             gap: 16px;
             flex-wrap: wrap;
+            justify-content: space-between;
         }
         .status {
             background: #1e2a1e;
@@ -182,6 +198,16 @@
             display: inline-flex;
             align-items: center;
             gap: 6px;
+        }
+        .cdn-source {
+            font-family: monospace;
+            background: #0a0a0a;
+            padding: 6px 14px;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: #c0c0ff;
+            border: 0.5px solid #2a2a4a;
         }
         .kode-display {
             font-family: monospace;
@@ -225,6 +251,7 @@
             gap: 12px;
             pointer-events: none;
             animation: fadeUp 0.2s ease;
+            backdrop-filter: blur(4px);
         }
         @keyframes fadeUp {
             from {
@@ -248,15 +275,26 @@
                 justify-content: flex-end;
             }
         }
+        .fallback-attempt {
+            font-size: 0.7rem;
+            margin-top: 6px;
+            display: block;
+        }
     </style>
 </head>
 <body>
 <div class="app">
     <div class="header">
-        <h1>testing webku</h1>
-        <div class="premium-badge">
-            <i class="fas fa-crown"></i>
-            <span>premium</span>
+        <h1>⚡ dual cdn player</h1>
+        <div class="badge-group">
+            <div class="premium-badge">
+                <i class="fas fa-crown"></i>
+                <span>premium</span>
+            </div>
+            <div class="cdn-badge">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <span>videy.co + aceimg.com</span>
+            </div>
         </div>
     </div>
 
@@ -266,10 +304,10 @@
         </div>
         <div class="control-bar">
             <div class="input-area">
-                <label><i class="fas fa-key"></i> MASUKKAN KODE</label>
+                <label><i class="fas fa-key"></i> MASUKKAN KODE / URL VIDEO</label>
                 <div class="input-box">
                     <i class="fas fa-code"></i>
-                    <input type="text" id="kode" placeholder="Contoh: 189201DKX" autocomplete="off">
+                    <input type="text" id="kode" placeholder="Contoh: 189201DKX  atau  https://cdn2.videy.co/abc123.mp4" autocomplete="off">
                 </div>
             </div>
             <div class="buttons">
@@ -280,15 +318,20 @@
     </div>
 
     <div class="info-bar">
-        <div class="status" id="statusBadge">
-            <i class="fas fa-circle" style="font-size:0.5rem;"></i> standby
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+            <div class="status" id="statusBadge">
+                <i class="fas fa-circle" style="font-size:0.5rem;"></i> standby
+            </div>
+            <div class="cdn-source" id="cdnSourceBadge">
+                <i class="fas fa-server"></i> cdn: —
+            </div>
         </div>
         <div class="kode-display" id="kodeDisplay">
             <i class="fas fa-tag"></i> belum ada kode
         </div>
     </div>
     <footer>
-        cdn2.videy.co / [kode] .mp4
+        🎬 Dual CDN support • Videy.co (cdn2.videy.co) & Aceimg.com (cdn.aceimg.com) • Auto fallback detection
     </footer>
 </div>
 
@@ -299,72 +342,260 @@
     const playerWrapper = document.getElementById('playerWrapper');
     const statusBadge = document.getElementById('statusBadge');
     const kodeDisplay = document.getElementById('kodeDisplay');
+    const cdnSourceBadge = document.getElementById('cdnSourceBadge');
 
     let currentKode = '';
+    let activeCdn = null;      // 'videy' or 'aceimg'
+    let currentVideoElement = null;
 
-    function bersihkanKode(raw) {
-        if (!raw) return null;
-        let bersih = raw.trim().split('?')[0].split('#')[0];
-        if (bersih.includes('cdn2.videy.co/')) {
-            let match = bersih.match(/cdn2\.videy\.co\/([a-zA-Z0-9\-_]+)/);
-            if (match) return match[1];
+    // Fungsi ekstrak kode murni dari berbagai format, mendukung url penuh videy / aceimg
+    function extractCleanCode(rawInput) {
+        if (!rawInput) return null;
+        let trimmed = rawInput.trim();
+        
+        // 1. Deteksi URL lengkap cdn2.videy.co
+        let videyMatch = trimmed.match(/cdn2\.videy\.co\/([a-zA-Z0-9\-_]+)(?:\.mp4)?/i);
+        if (videyMatch) return { code: videyMatch[1], detectedCdn: 'videy' };
+        
+        // 2. Deteksi URL lengkap cdn.aceimg.com
+        let aceMatch = trimmed.match(/cdn\.aceimg\.com\/([a-zA-Z0-9\-_]+)(?:\.mp4)?/i);
+        if (aceMatch) return { code: aceMatch[1], detectedCdn: 'aceimg' };
+        
+        // 3. jika hanya kode mentah (alphanumeric + garis)
+        if (/^[a-zA-Z0-9\-_]+$/.test(trimmed)) {
+            return { code: trimmed, detectedCdn: null }; // null -> nanti coba kedua cdn
         }
-        if (bersih.endsWith('.mp4')) bersih = bersih.slice(0, -4);
-        if (/^[a-zA-Z0-9\-_]+$/.test(bersih)) return bersih;
+        
+        // 4. coba jika input mengandung .mp4 di akhir, hapus .mp4
+        if (trimmed.endsWith('.mp4')) {
+            let rawCode = trimmed.slice(0, -4);
+            if (/^[a-zA-Z0-9\-_]+$/.test(rawCode)) {
+                return { code: rawCode, detectedCdn: null };
+            }
+        }
+        
         return null;
     }
 
-    function putarVideo(kode) {
+    // Fungsi untuk mencoba memuat video dari CDN tertentu, mengembalikan promise apakah berhasil dimuat
+    function testAndPlayFromCdn(kode, cdnType, preferPlay = true) {
+        return new Promise((resolve, reject) => {
+            const url = cdnType === 'videy' ? `https://cdn2.videy.co/${kode}.mp4` : `https://cdn.aceimg.com/${kode}.mp4`;
+            const video = document.createElement('video');
+            video.preload = 'metadata';
+            video.style.width = '100%';
+            video.style.height = '100%';
+            video.style.objectFit = 'contain';
+            video.style.backgroundColor = '#000';
+            
+            let timeoutId = setTimeout(() => {
+                cleanupVideoEvents();
+                reject(new Error(`Timeout ${cdnType} - ${kode}`));
+            }, 8000); // 8 detik timeout
+            
+            const cleanupVideoEvents = () => {
+                video.removeEventListener('canplaythrough', onCanPlay);
+                video.removeEventListener('error', onError);
+                clearTimeout(timeoutId);
+            };
+            
+            const onCanPlay = () => {
+                cleanupVideoEvents();
+                // Jika ingin langsung autoplay dan resolve
+                if (preferPlay) {
+                    // Tampilkan video, ganti player
+                    applyVideoToPlayer(video, kode, cdnType);
+                    video.play().catch(e => {
+                        // autoplay gagal (browser kebijakan), tapi video sudah tampil
+                        console.warn("autoplay blocked", e);
+                        toast("Klik play pada player untuk memutar", "info");
+                    });
+                }
+                resolve({ success: true, cdn: cdnType, videoElement: video });
+            };
+            
+            const onError = (err) => {
+                cleanupVideoEvents();
+                reject(new Error(`${cdnType} load error`));
+            };
+            
+            video.addEventListener('canplaythrough', onCanPlay);
+            video.addEventListener('error', onError);
+            
+            video.src = url;
+            video.load();
+        });
+    }
+    
+    // Fungsi utama: mencoba kedua CDN secara cerdas, fallback otomatis
+    async function playWithFallback(kode, preferredCdn = null) {
+        // Hapus player sebelumnya
+        if (currentVideoElement) {
+            currentVideoElement.pause();
+            currentVideoElement.src = '';
+            currentVideoElement = null;
+        }
         playerWrapper.innerHTML = '';
+        
         if (!kode) {
-            let empty = document.createElement('div');
-            empty.className = 'empty-state';
-            empty.innerHTML = '<i class="fas fa-film"></i><span>Tidak ada video</span><small>Masukkan kode dan klik Putar</small>';
-            playerWrapper.appendChild(empty);
-            currentKode = '';
-            statusBadge.innerHTML = '<i class="fas fa-circle" style="font-size:0.5rem;"></i> idle';
-            statusBadge.style.background = "#1e1e2a";
-            statusBadge.style.color = "#a0a0ff";
+            showEmptyState();
+            updateStatus('idle', '#1e1e2a', '#a0a0ff');
+            cdnSourceBadge.innerHTML = `<i class="fas fa-server"></i> cdn: —`;
             kodeDisplay.innerHTML = '<i class="fas fa-tag"></i> belum ada kode';
+            currentKode = '';
+            activeCdn = null;
+            return false;
+        }
+        
+        updateStatus(`memuat ${kode}...`, '#2a2a1e', '#ffd966');
+        cdnSourceBadge.innerHTML = `<i class="fas fa-spinner fa-pulse"></i> cek sumber...`;
+        
+        // Tentukan urutan cdn: jika preferredCdn ada maka duluan, jika tidak urutan: videy, aceimg
+        let cdnOrder = [];
+        if (preferredCdn === 'videy') cdnOrder = ['videy', 'aceimg'];
+        else if (preferredCdn === 'aceimg') cdnOrder = ['aceimg', 'videy'];
+        else cdnOrder = ['videy', 'aceimg'];  // default: videy lebih prioritas
+        
+        let lastError = null;
+        
+        for (let cdn of cdnOrder) {
+            try {
+                updateStatus(`mencoba ${cdn.toUpperCase()} ...`, '#2a2a2a', '#ffaa66');
+                cdnSourceBadge.innerHTML = `<i class="fas fa-hourglass-half"></i> ${cdn.toUpperCase()}`;
+                const result = await testAndPlayFromCdn(kode, cdn, true);
+                if (result.success) {
+                    // Sukses!
+                    activeCdn = cdn;
+                    currentKode = kode;
+                    currentVideoElement = result.videoElement;
+                    updateStatus(`✓ video siap (${cdn.toUpperCase()})`, '#1e2a1e', '#baffba');
+                    cdnSourceBadge.innerHTML = `<i class="fas fa-check-circle"></i> CDN: ${cdn.toUpperCase()}`;
+                    kodeDisplay.innerHTML = `<i class="fas fa-code"></i> ${kode}.mp4 <span style="opacity:0.6">[${cdn}]</span>`;
+                    toast(`Berhasil dimuat via ${cdn.toUpperCase()}`, 'success');
+                    return true;
+                }
+            } catch (err) {
+                console.warn(`cdn ${cdn} gagal:`, err);
+                lastError = err;
+                // lanjut ke cdn berikutnya
+            }
+        }
+        
+        // Jika semua cdn gagal
+        showEmptyStateWithMessage(`Gagal memuat "${kode}" dari kedua CDN`, 'error');
+        updateStatus('gagal muat', '#2a1e1e', '#ffaaaa');
+        cdnSourceBadge.innerHTML = `<i class="fas fa-exclamation-triangle"></i> CDN error`;
+        kodeDisplay.innerHTML = `<i class="fas fa-ban"></i> ${kode} tidak tersedia`;
+        toast(`Kode "${kode}" tidak ditemukan di Videy maupun Aceimg`, 'error');
+        currentKode = '';
+        activeCdn = null;
+        return false;
+    }
+    
+    function applyVideoToPlayer(videoElement, kode, cdnType) {
+        // Bersihkan wrapper dan pasang video
+        playerWrapper.innerHTML = '';
+        videoElement.controls = true;
+        videoElement.autoplay = true;
+        
+        // Event listener untuk update status
+        videoElement.addEventListener('play', () => {
+            if (statusBadge.innerHTML.includes('gagal')) return;
+            updateStatus(`sedang diputar (${cdnType})`, '#1e3a2a', '#9bff9b');
+        });
+        videoElement.addEventListener('pause', () => {
+            if (!videoElement.error && !videoElement.src?.includes('blob'))
+                updateStatus(`pause (${cdnType})`, '#2a2a2a', '#dddddd');
+        });
+        videoElement.addEventListener('waiting', () => {
+            updateStatus(`buffering...`, '#3a3a2a', '#ffcc88');
+        });
+        videoElement.addEventListener('ended', () => {
+            updateStatus(`selesai`, '#1e1e2a', '#bbbbff');
+        });
+        
+        playerWrapper.appendChild(videoElement);
+    }
+    
+    function showEmptyStateWithMessage(message, type = 'info') {
+        playerWrapper.innerHTML = '';
+        const emptyDiv = document.createElement('div');
+        emptyDiv.className = 'empty-state';
+        let icon = 'fa-film';
+        if (type === 'error') icon = 'fa-exclamation-circle';
+        emptyDiv.innerHTML = `<i class="fas ${icon}"></i><span>${message}</span><small>Gunakan kode yang valid atau cek koneksi</small>`;
+        playerWrapper.appendChild(emptyDiv);
+    }
+    
+    function showEmptyState() {
+        playerWrapper.innerHTML = '';
+        const emptyDiv = document.createElement('div');
+        emptyDiv.className = 'empty-state';
+        emptyDiv.innerHTML = '<i class="fas fa-film"></i><span>Tidak ada video</span><small>Masukkan kode atau URL lalu klik Putar</small>';
+        playerWrapper.appendChild(emptyDiv);
+    }
+    
+    function updateStatus(text, bgColor, textColor) {
+        statusBadge.innerHTML = `<i class="fas ${text.includes('gagal') ? 'fa-exclamation-triangle' : (text.includes('siap') ? 'fa-check-circle' : (text.includes('memuat') ? 'fa-spinner fa-pulse' : 'fa-circle'))}" style="font-size:0.7rem;"></i> ${text}`;
+        statusBadge.style.background = bgColor;
+        statusBadge.style.color = textColor;
+    }
+    
+    // Fungsi untuk mengekstrak kode & preferred CDN dari input (bisa dari URL asli)
+    function parseInputAndGetBest(raw) {
+        if (!raw) return null;
+        const result = extractCleanCode(raw);
+        if (!result) return null;
+        return {
+            code: result.code,
+            preferredCdn: result.detectedCdn  // bisa null atau 'videy'/'aceimg'
+        };
+    }
+    
+    // Handler utama Play
+    async function handlePlay() {
+        let rawValue = kodeInput.value.trim();
+        if (!rawValue) {
+            toast('Masukkan kode atau URL video terlebih dahulu', 'warning');
             return;
         }
         
-        let url = `https://cdn2.videy.co/${kode}.mp4`;
-        let video = document.createElement('video');
-        video.src = url;
-        video.controls = true;
-        video.autoplay = true;
-        video.style.width = '100%';
-        video.style.height = '100%';
-        video.style.objectFit = 'contain';
-        video.style.backgroundColor = '#000';
+        const parsed = parseInputAndGetBest(rawValue);
+        if (!parsed) {
+            toast('Format tidak dikenali. Gunakan kode (contoh: 189201DKX) atau URL cdn2.videy.co/xxx.mp4', 'error');
+            return;
+        }
         
-        video.addEventListener('canplay', () => {
-            statusBadge.innerHTML = '<i class="fas fa-check-circle"></i> video siap';
-            statusBadge.style.background = "#1e2a1e";
-            statusBadge.style.color = "#baffba";
-        });
-        video.addEventListener('error', () => {
-            statusBadge.innerHTML = '<i class="fas fa-exclamation-triangle"></i> gagal muat';
-            statusBadge.style.background = "#2a1e1e";
-            statusBadge.style.color = "#ffaaaa";
-            toast('Kode tidak valid atau video tidak ditemukan', 'error');
-        });
-        video.addEventListener('play', () => {
-            statusBadge.innerHTML = '<i class="fas fa-play"></i> diputar';
-        });
+        const targetCode = parsed.code;
+        let preferred = parsed.preferredCdn;
         
-        playerWrapper.appendChild(video);
-        currentKode = kode;
-        kodeDisplay.innerHTML = `<i class="fas fa-code"></i> ${kode}.mp4`;
-        statusBadge.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> loading...';
-        statusBadge.style.background = "#2a2a1e";
+        // update input box dengan kode bersih (biar user lihat hasil ekstrak)
+        kodeInput.value = targetCode;
         
-        video.play().catch(() => {
-            toast('Klik play untuk memulai', 'info');
-        });
+        // Mulai play dengan fallback
+        await playWithFallback(targetCode, preferred);
     }
-
+    
+    function handleClear() {
+        // Hentikan video & bersihkan
+        if (currentVideoElement) {
+            currentVideoElement.pause();
+            currentVideoElement.src = '';
+            currentVideoElement.load();
+            currentVideoElement = null;
+        }
+        playerWrapper.innerHTML = '';
+        showEmptyState();
+        kodeInput.value = '';
+        currentKode = '';
+        activeCdn = null;
+        updateStatus('standby', '#1e1e2a', '#a0a0ff');
+        cdnSourceBadge.innerHTML = `<i class="fas fa-server"></i> cdn: —`;
+        kodeDisplay.innerHTML = '<i class="fas fa-tag"></i> belum ada kode';
+        toast('Player dibersihkan', 'info');
+    }
+    
+    // Toast notifikasi
     function toast(msg, type = 'info') {
         let existing = document.querySelector('.toast');
         if (existing) existing.remove();
@@ -374,42 +605,43 @@
         let bg = '#2c2c2c';
         if (type === 'error') { icon = 'fa-exclamation-circle'; bg = '#3a1f1f'; }
         if (type === 'success') { icon = 'fa-check-circle'; bg = '#1f3a1f'; }
+        if (type === 'warning') { icon = 'fa-exclamation-triangle'; bg = '#3a2a1a'; }
         toastEl.style.background = bg;
         toastEl.innerHTML = `<i class="fas ${icon}"></i><span>${msg}</span>`;
         document.body.appendChild(toastEl);
         setTimeout(() => {
             if (toastEl) toastEl.remove();
-        }, 2500);
+        }, 2800);
     }
-
-    playBtn.addEventListener('click', () => {
-        let raw = kodeInput.value;
-        if (!raw) {
-            toast('Masukkan kode dulu', 'warning');
-            return;
-        }
-        let kode = bersihkanKode(raw);
-        if (!kode) {
-            toast('Kode invalid! contoh: 189201DKX', 'error');
-            return;
-        }
-        putarVideo(kode);
-        kodeInput.value = kode;
-        toast(`Memutar: ${kode}.mp4`, 'success');
-    });
-
-    clearBtn.addEventListener('click', () => {
-        putarVideo(null);
-        kodeInput.value = '';
-        toast('Video dibersihkan', 'info');
-        kodeInput.focus();
-    });
-
+    
+    // Simulasi jika ingin mendeteksi kedua CDN via CORS (tidak perlu preflight karena kita hanya video element)
+    // Fungsi tambahan: cek langsung dual-url sebagai demo saat halaman dimuat? optional.
+    // Event Listeners
+    playBtn.addEventListener('click', handlePlay);
+    clearBtn.addEventListener('click', handleClear);
     kodeInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') playBtn.click();
+        if (e.key === 'Enter') handlePlay();
     });
-
-    putarVideo(null);
+    
+    // Inisialisasi tampilan awal
+    showEmptyState();
+    updateStatus('standby', '#1e1e2a', '#a0a0ff');
+    cdnSourceBadge.innerHTML = `<i class="fas fa-server"></i> cdn: —`;
+    
+    // Fitur tambahan: contoh demo jika ada parameter URL? Tidak diperlukan
+    // tapi bisa menambah log interaksi: biar user tahu bahwa aceimg juga didukung.
+    console.log("Dual CDN Player Ready | Videy + Aceimg");
+    
+    // optional: test fallback otomatis jika ingin menampilkan pesan, sudah terintegrasi.
+    // Penjelasan: fungsi playWithFallback akan mencoba videy dulu, lalu aceimg (kecuali user input explicit cdn url)
+    // Saat input berupa kode tanpa cdn, urutan default videy -> aceimg, jika videy gagal otomatis pake aceimg.
+    // Saat input url langsung dari aceimg, prioritas aceimg dulu lalu videy.
+    
+    // Fitur tambahan: Agar lebih canggih, tambahkan kemampuan mendeteksi bahwa video gagal dimuat dari CDN1 lalu langsung CDN2.
+    // Semua sudah dihandle oleh testAndPlayFromCdn dengan timeout 8 detik dan fallback loop.
+    // Untuk memastikan event error pada video element cepat terdeteksi.
+    
+    // tambahan demo manual jika ada tombol rahasia? tidak perlu, sudah lengkap.
 </script>
 </body>
 </html>
